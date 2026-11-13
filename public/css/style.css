@@ -662,7 +662,11 @@ input[type="text"]:focus {
 }
 
 .magic-tile-badge,
-.magic-tile-badge-dyn {
+.magic-tile-badge-dyn,
+.magic-tile-badge-dyn circle,
+.magic-tile-badge-dyn text {
+    animation: none !important;
+    transform: none !important;
     transform-origin: center;
     pointer-events: none;
     user-select: none;

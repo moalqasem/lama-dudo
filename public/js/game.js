@@ -738,6 +738,7 @@
     onEvent('announcement', ({ text }) => {
         showToast(text);
         addChatMessage({ senderName: '📢 النظام', text: text, isSystem: true });
+        renderMagicTiles();
     });
 
     onEvent('error_message', (msg) => {
