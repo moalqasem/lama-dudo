@@ -30,17 +30,29 @@ window.OfflineLudoEngine = (function () {
     }
 
     class OfflineRoom {
-        constructor(playerName, gameMode, clientCallbacks) {
+        constructor(playerName, gameMode, clientCallbacks, playerCount = 2) {
             this.callbacks = clientCallbacks;
             this.gameMode = gameMode || 'magic';
             this.code = 'LOCAL';
             this.roundCount = 0;
-            this.players = [
-                { id: 'p0', name: playerName || 'أنت', isBot: false, avatar: '🔴' },
-                { id: 'b1', name: BOT_NAMES[0], isBot: true, avatar: '🟢' },
-                { id: 'b2', name: BOT_NAMES[1], isBot: true, avatar: '🟡' },
-                { id: 'b3', name: BOT_NAMES[2], isBot: true, avatar: '🔵' }
-            ];
+            this.playerCount = playerCount;
+
+            if (playerCount === 2) {
+                // 2 Players: Red (Human) and Green (Bot) only! Players 3 & 4 are completely null/omitted!
+                this.players = [
+                    { id: 'p0', name: playerName || 'أنت', isBot: false, avatar: '🔴' },
+                    { id: 'b1', name: BOT_NAMES[0], isBot: true, avatar: '🟢' },
+                    null,
+                    null
+                ];
+            } else {
+                this.players = [
+                    { id: 'p0', name: playerName || 'أنت', isBot: false, avatar: '🔴' },
+                    { id: 'b1', name: BOT_NAMES[0], isBot: true, avatar: '🟢' },
+                    { id: 'b2', name: BOT_NAMES[1], isBot: true, avatar: '🟡' },
+                    { id: 'b3', name: BOT_NAMES[2], isBot: true, avatar: '🔵' }
+                ];
+            }
 
             const initialTokens = [
                 [-1, -1, -1, -1],
@@ -264,8 +276,9 @@ window.OfflineLudoEngine = (function () {
                 this.emit('announcement', { text: `🎉 فاز ${this.players[pIdx].name} بالمركز ${this.gameState.winners.length}!` });
             }
 
-            if (this.gameState.winners.length >= 3) {
-                const last = [0, 1, 2, 3].find(p => !this.gameState.winners.includes(p));
+            const activePlayers = this.players.filter(p => p !== null);
+            if (this.gameState.winners.length >= activePlayers.length - 1) {
+                const last = [0, 1, 2, 3].find(p => this.players[p] && !this.gameState.winners.includes(p));
                 if (last !== undefined) this.gameState.winners.push(last);
                 this.emit('game_over', {
                     winners: this.gameState.winners.map(w => ({
@@ -288,11 +301,14 @@ window.OfflineLudoEngine = (function () {
         nextTurn(anotherTurn) {
             if (!anotherTurn) {
                 let next = (this.gameState.currentTurn + 1) % 4;
-                while (this.gameState.winners.includes(next)) {
+                let attempts = 0;
+                while ((!this.players[next] || this.gameState.winners.includes(next)) && attempts < 4) {
                     next = (next + 1) % 4;
+                    attempts++;
                 }
 
-                if (next === 0) {
+                const firstActive = this.players.findIndex(p => p !== null);
+                if (next === firstActive) {
                     this.roundCount++;
                     if (this.gameMode === 'magic') {
                         this.gameState.magicTiles = generateMagicTiles(6);
@@ -374,8 +390,8 @@ window.OfflineLudoEngine = (function () {
     }
 
     return {
-        createRoom: function (playerName, gameMode, callbacks) {
-            return new OfflineRoom(playerName, gameMode, callbacks);
+        createRoom: function (playerName, gameMode, callbacks, playerCount = 2) {
+            return new OfflineRoom(playerName, gameMode, callbacks, playerCount);
         }
     };
 })();

@@ -29,7 +29,7 @@
         } else {
             if (event === 'create_room' || event === 'play_offline' || event === 'join_room') {
                 state.isOfflineMode = true;
-                offlineRoom = window.OfflineLudoEngine.createRoom(data.playerName || 'أنت', state.selectedMode, clientListeners);
+                offlineRoom = window.OfflineLudoEngine.createRoom(data.playerName || 'أنت', state.selectedMode, clientListeners, state.selectedPlayerCount || 2);
                 offlineRoom.start();
             }
         }
@@ -38,6 +38,7 @@
     // App State
     const state = {
         selectedMode: 'magic', // 'classic' | 'quick' | 'magic'
+        selectedPlayerCount: 2, // 2 (1v1) or 4 players
         myPlayerIndex: 0,
         roomCode: null,
         isHost: false,
@@ -65,7 +66,8 @@
         roomCodeInput: document.getElementById('room-code-input'),
         btnJoin: document.getElementById('btn-join-room'),
         btnPlayOffline: document.getElementById('btn-play-offline'),
-        modeChips: document.querySelectorAll('.mode-chip')
+        modeChips: document.querySelectorAll('.mode-chip'),
+        countChips: document.querySelectorAll('.count-chip')
     };
 
     const roomEls = {
@@ -280,6 +282,7 @@
         const positionBuckets = {};
 
         for (let pIdx = 0; pIdx < 4; pIdx++) {
+            if (!state.players || !state.players[pIdx]) continue;
             for (let tIdx = 0; tIdx < 4; tIdx++) {
                 const step = tokens[pIdx][tIdx];
                 const key = `${pIdx}_${step}`;
@@ -300,6 +303,7 @@
         ];
 
         for (let pIdx = 0; pIdx < 4; pIdx++) {
+            if (!state.players || !state.players[pIdx]) continue;
             const pConfig = window.LudoBoard.PLAYER_CONFIG[pIdx];
             const isMyTurn = (state.gameState.currentTurn === state.myPlayerIndex && pIdx === state.myPlayerIndex);
             const canMoveThisTurn = isMyTurn && state.gameState.hasRolled && !state.animating;
@@ -555,11 +559,15 @@
         const pConfig = window.LudoBoard.PLAYER_CONFIG[curTurn];
         const targetHome = (gs.gameMode === 'quick') ? 2 : 4;
 
-        // Player Cards Active Indicator
+        // Player Cards Active Indicator & Visibility (Hide players 3 and 4 when playing 2 players!)
         gameEls.playerCards.forEach((card, idx) => {
             if (card) {
-                if (idx === curTurn) card.classList.add('active-turn');
-                else card.classList.remove('active-turn');
+                const playerExists = !!(state.players && state.players[idx]);
+                card.style.display = playerExists ? 'flex' : 'none';
+                if (playerExists) {
+                    if (idx === curTurn) card.classList.add('active-turn');
+                    else card.classList.remove('active-turn');
+                }
             }
         });
 
@@ -655,6 +663,15 @@
         data.players.forEach((p, idx) => {
             const nameEl = roomEls.nameSlots[idx];
             const botBtn = document.querySelector(`.btn-add-bot[data-slot="${idx}"]`);
+            const slotBox = document.querySelector(`.player-slot[data-slot="${idx}"]`);
+
+            if (slotBox) {
+                if (data.maxPlayers === 2 && (idx === 2 || idx === 3)) {
+                    slotBox.style.display = 'none';
+                } else {
+                    slotBox.style.display = 'flex';
+                }
+            }
 
             if (p) {
                 if (nameEl) nameEl.textContent = p.name + (p.isBot ? ' 🤖' : '');
@@ -686,10 +703,14 @@
             roomEls.btnStart.style.display = 'none';
         }
 
-        // Update Player Names in Top Bar
+        // Update Player Names in Top Bar & Hide Inactive Cards
         data.players.forEach((p, idx) => {
-            const cardName = gameEls.playerCards[idx]?.querySelector('.p-name');
-            if (cardName) cardName.textContent = p ? p.name : 'فارغ';
+            const card = gameEls.playerCards[idx];
+            if (card) {
+                card.style.display = p ? 'flex' : 'none';
+                const cardName = card.querySelector('.p-name');
+                if (cardName && p) cardName.textContent = p.name;
+            }
         });
 
         if (window.VoiceChat) {
@@ -807,11 +828,21 @@
         });
     });
 
+    // Player Count Chips Selection (2 Players or 4 Players)
+    lobbyEls.countChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            window.soundManager.playClick();
+            lobbyEls.countChips.forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            state.selectedPlayerCount = parseInt(chip.getAttribute('data-count'), 10) || 2;
+        });
+    });
+
     // Create Room
     lobbyEls.btnCreate.addEventListener('click', () => {
         window.soundManager.playClick();
         const name = lobbyEls.playerName.value.trim() || 'الملك 👑';
-        emitEvent('create_room', { playerName: name, gameMode: state.selectedMode });
+        emitEvent('create_room', { playerName: name, gameMode: state.selectedMode, maxPlayers: state.selectedPlayerCount });
     });
 
     // Join Room
@@ -831,7 +862,7 @@
         window.soundManager.playClick();
         const name = lobbyEls.playerName.value.trim() || 'أنت';
         state.isOfflineMode = true;
-        offlineRoom = window.OfflineLudoEngine.createRoom(name, state.selectedMode, clientListeners);
+        offlineRoom = window.OfflineLudoEngine.createRoom(name, state.selectedMode, clientListeners, state.selectedPlayerCount || 2);
         offlineRoom.start();
     });
 

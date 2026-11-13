@@ -267,6 +267,54 @@ p.subtitle {
     color: var(--text-muted);
 }
 
+/* Player Count Selection Chips */
+.player-count-group {
+    text-align: right;
+    margin-bottom: 18px;
+}
+.player-count-group label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 8px;
+}
+.count-chips {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.count-chip {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    font-family: var(--font-family);
+    color: var(--text-main);
+    transition: all 0.2s;
+}
+.count-chip:hover {
+    border-color: #f59e0b;
+}
+.count-chip.active {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.25));
+    border-color: #f59e0b;
+    box-shadow: 0 0 14px var(--gold-glow);
+    color: #fef08a;
+}
+.count-icon {
+    font-size: 1.2rem;
+}
+.count-title {
+    font-weight: 800;
+    font-size: 0.9rem;
+}
+
 .input-group {
     text-align: right;
     margin-bottom: 16px;
@@ -727,6 +775,14 @@ input[type="text"]:focus {
 .turn-text {
     font-weight: 700;
     font-size: 0.95rem;
+}
+
+.dice-roll-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
 }
 
 /* 3D Gold Dice */
@@ -1465,86 +1521,177 @@ input[type="text"]:focus {
         font-size: 0.85rem;
     }
 
-    /* Game Screen Top Bar on mobile phone */
+    /* Whole app container on mobile phone: 100% viewport fit, zero scrolling */
+    html, body {
+        overflow: hidden !important;
+        height: 100dvh !important;
+        min-height: 100dvh !important;
+        max-height: 100dvh !important;
+    }
+    .app-container {
+        padding: 4px 6px;
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
+        justify-content: flex-start;
+    }
+    #game-screen {
+        height: 100%;
+        max-height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+    }
     .game-top-bar {
-        gap: 6px;
-        margin-bottom: 6px;
+        gap: 4px;
+        margin-bottom: 2px;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        align-items: center;
+        height: 36px;
     }
     .player-cards-row {
         gap: 4px;
+        flex-wrap: nowrap;
+        flex: 1;
+        overflow: hidden;
     }
     .player-card {
-        padding: 4px 5px;
+        padding: 2px 6px;
         gap: 4px;
         border-radius: 8px;
+        height: 32px;
     }
     .avatar-box {
-        width: 22px;
-        height: 22px;
+        width: 20px;
+        height: 20px;
     }
     .p-dot {
-        font-size: 0.95rem;
+        font-size: 0.85rem;
     }
     .p-name {
-        font-size: 0.68rem;
-        max-width: 50px;
+        font-size: 0.65rem;
+        max-width: 48px;
     }
     .p-home-count {
-        font-size: 0.62rem;
-        padding: 1px 4px;
+        font-size: 0.6rem;
+        padding: 1px 3px;
     }
     .game-quick-tools {
-        gap: 5px;
+        gap: 3px;
+        flex-wrap: nowrap;
     }
     .btn-tool {
-        width: 32px;
-        height: 32px;
-        font-size: 0.95rem;
+        width: 28px;
+        height: 28px;
+        font-size: 0.85rem;
+        border-radius: 6px;
     }
 
-    /* Board & Control Fitting on mobile screen */
+    /* Game Main Area & Board & Control Fitting on mobile screen */
+    .game-main-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-evenly;
+        gap: 4px;
+        width: 100%;
+        overflow: hidden;
+    }
     .board-wrapper {
         width: 100%;
-        max-width: min(96vw, 48vh);
+        max-width: min(92vw, 42vh);
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
     .board-container {
-        border-radius: 16px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5), 0 0 0 2px #1c100b, 0 0 0 4px #f59e0b;
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 0 2px #1c100b, 0 0 0 3px #f59e0b;
     }
     .control-panel {
         width: 100%;
-        max-width: min(96vw, 48vh);
-        padding: 10px 12px;
-        gap: 8px;
-        border-radius: 14px;
+        max-width: min(92vw, 42vh);
+        padding: 4px 8px;
+        gap: 3px;
+        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.85);
     }
     .turn-status-banner {
-        padding: 5px 10px;
+        padding: 2px 8px;
         margin-bottom: 0;
     }
     .turn-text {
-        font-size: 0.84rem;
+        font-size: 0.76rem;
+    }
+
+    /* Horizontal compact Dice & Roll area */
+    .dice-roll-area {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        width: 100%;
+        padding: 1px 0;
     }
     .dice-stage {
-        width: 76px;
-        height: 76px;
-        margin: 2px 0;
+        width: 50px;
+        height: 50px;
+        margin: 0;
     }
+    .dice-cube {
+        width: 36px;
+        height: 36px;
+    }
+    .dice-face {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+    }
+    .dice-face.face-1 { transform: translateZ(18px); }
+    .dice-face.face-2 { transform: rotateY(90deg) translateZ(18px); }
+    .dice-face.face-3 { transform: rotateY(180deg) translateZ(18px); }
+    .dice-face.face-4 { transform: rotateY(-90deg) translateZ(18px); }
+    .dice-face.face-5 { transform: rotateX(90deg) translateZ(18px); }
+    .dice-face.face-6 { transform: rotateX(-90deg) translateZ(18px); }
+
     .btn-roll {
-        padding: 10px 20px;
-        font-size: 1.05rem;
-        border-radius: 12px;
+        padding: 6px 16px;
+        font-size: 0.95rem;
+        border-radius: 10px;
+        height: 40px;
+        flex: 1;
+        max-width: 170px;
     }
+
+    /* Compact Magic Powers Dock */
     .magic-powers-dock {
-        padding: 8px;
+        padding: 3px 4px;
+        gap: 2px;
+        margin-top: 0;
+    }
+    .dock-title {
+        display: none; /* Hidden on mobile to save vertical space */
+    }
+    .dock-powers-row {
         gap: 4px;
     }
     .power-btn {
-        padding: 5px 6px;
-        font-size: 0.72rem;
+        padding: 3px 6px;
+        font-size: 0.68rem;
+        gap: 2px;
     }
     .power-btn .p-icon {
-        font-size: 1.1rem;
+        font-size: 0.95rem;
+    }
+    .p-badge {
+        font-size: 0.6rem;
+        min-width: 14px;
+        height: 14px;
+        line-height: 14px;
     }
 
     /* Modals on mobile */

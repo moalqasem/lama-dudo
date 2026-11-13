@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261113_06">
+    <link rel="stylesheet" href="css/style.css?v=20261113_07">
 </head>
 <body>
     <div id="app" class="app-container">
@@ -52,6 +52,21 @@
                             <span class="mode-icon">🪄</span>
                             <span class="mode-title">سحري (Magic)</span>
                             <span class="mode-desc">أدوات وصواريخ</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Player Count Selector -->
+                <div class="player-count-group">
+                    <label>عدد اللاعبين:</label>
+                    <div class="count-chips">
+                        <button class="count-chip active" data-count="2">
+                            <span class="count-icon">👥</span>
+                            <span class="count-title">لاعبان (1 ضد 1)</span>
+                        </button>
+                        <button class="count-chip" data-count="4">
+                            <span class="count-icon">👥👥</span>
+                            <span class="count-title">4 لاعبين</span>
                         </button>
                     </div>
                 </div>
@@ -247,24 +262,26 @@
                         <span class="turn-text" id="turn-text">دور اللاعب الأحمر</span>
                     </div>
 
-                    <!-- 3D Gold Dice Stage -->
-                    <div class="dice-stage">
-                        <div class="dice-cube gold-dice" id="dice-cube">
-                            <div class="dice-face face-1"><span class="pip pip-center"></span></div>
-                            <div class="dice-face face-2"><span class="pip pip-tl"></span><span class="pip pip-br"></span></div>
-                            <div class="dice-face face-3"><span class="pip pip-tl"></span><span class="pip pip-center"></span><span class="pip pip-br"></span></div>
-                            <div class="dice-face face-4"><span class="pip pip-tl"></span><span class="pip pip-tr"></span><span class="pip pip-bl"></span><span class="pip pip-br"></span></div>
-                            <div class="dice-face face-5"><span class="pip pip-tl"></span><span class="pip pip-tr"></span><span class="pip pip-center"></span><span class="pip pip-bl"></span><span class="pip pip-br"></span></div>
-                            <div class="dice-face face-6">
-                                <span class="pip pip-tl"></span><span class="pip pip-ml"></span><span class="pip pip-bl"></span>
-                                <span class="pip pip-tr"></span><span class="pip pip-mr"></span><span class="pip pip-br"></span>
+                    <!-- 3D Gold Dice & Roll Button Area -->
+                    <div class="dice-roll-area">
+                        <div class="dice-stage">
+                            <div class="dice-cube gold-dice" id="dice-cube">
+                                <div class="dice-face face-1"><span class="pip pip-center"></span></div>
+                                <div class="dice-face face-2"><span class="pip pip-tl"></span><span class="pip pip-br"></span></div>
+                                <div class="dice-face face-3"><span class="pip pip-tl"></span><span class="pip pip-center"></span><span class="pip pip-br"></span></div>
+                                <div class="dice-face face-4"><span class="pip pip-tl"></span><span class="pip pip-tr"></span><span class="pip pip-bl"></span><span class="pip pip-br"></span></div>
+                                <div class="dice-face face-5"><span class="pip pip-tl"></span><span class="pip pip-tr"></span><span class="pip pip-center"></span><span class="pip pip-bl"></span><span class="pip pip-br"></span></div>
+                                <div class="dice-face face-6">
+                                    <span class="pip pip-tl"></span><span class="pip pip-ml"></span><span class="pip pip-bl"></span>
+                                    <span class="pip pip-tr"></span><span class="pip pip-mr"></span><span class="pip pip-br"></span>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <button id="btn-roll-dice" class="btn btn-roll btn-lg">
-                        <span>ارمِ النرد 🎲</span>
-                    </button>
+                        <button id="btn-roll-dice" class="btn btn-roll btn-lg">
+                            <span>ارمِ النرد 🎲</span>
+                        </button>
+                    </div>
 
                     <!-- Magic Powers Bar (Only active in Magic mode!) -->
                     <div id="magic-powers-dock" class="magic-powers-dock">
@@ -453,10 +470,10 @@
 
     <!-- Scripts -->
     <script src="/socket.io/socket.io.js"></script>
-    <script src="js/audio.js?v=20261113_06"></script>
-    <script src="js/voice.js?v=20261113_06"></script>
-    <script src="js/board.js?v=20261113_06"></script>
-    <script src="js/offline-engine.js?v=20261113_06"></script>
-    <script src="js/game.js?v=20261113_06"></script>
+    <script src="js/audio.js?v=20261113_07"></script>
+    <script src="js/voice.js?v=20261113_07"></script>
+    <script src="js/board.js?v=20261113_07"></script>
+    <script src="js/offline-engine.js?v=20261113_07"></script>
+    <script src="js/game.js?v=20261113_07"></script>
 </body>
 </html>

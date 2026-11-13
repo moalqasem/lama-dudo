@@ -479,6 +479,7 @@ function broadcastRoomState(room) {
     io.to(room.code).emit('room_update', {
         code: room.code,
         hostId: room.hostId,
+        maxPlayers: room.maxPlayers || 4,
         players: room.players,
         gameState: {
             status: room.gameState.status,
@@ -499,11 +500,12 @@ function broadcastRoomState(room) {
 
 io.on('connection', (socket) => {
     // Create new room with chosen mode
-    socket.on('create_room', ({ playerName, gameMode = 'magic' }) => {
+    socket.on('create_room', ({ playerName, gameMode = 'magic', maxPlayers = 2 }) => {
         const code = generateRoomCode();
         const room = {
             code: code,
             hostId: socket.id,
+            maxPlayers: maxPlayers || 2,
             players: [
                 { id: socket.id, name: playerName || 'اللاعب 1', isBot: false, ready: true },
                 null,
@@ -529,8 +531,9 @@ io.on('connection', (socket) => {
         if (!room) return socket.emit('error_message', 'رمز الغرفة غير موجود.');
         if (room.gameState.status !== 'waiting') return socket.emit('error_message', 'اللعبة بدأت بالفعل.');
 
-        const slot = room.players.findIndex(p => p === null);
-        if (slot === -1) return socket.emit('error_message', 'الغرفة ممتلئة بالكامل.');
+        const allowedSlots = (room.maxPlayers === 2) ? [0, 1] : [0, 1, 2, 3];
+        const slot = allowedSlots.find(idx => room.players[idx] === null);
+        if (slot === undefined) return socket.emit('error_message', 'الغرفة ممتلئة بالكامل.');
 
         room.players[slot] = {
             id: socket.id,
@@ -560,8 +563,9 @@ io.on('connection', (socket) => {
         const room = rooms.get(socket.roomCode);
         if (!room || room.hostId !== socket.id || room.gameState.status !== 'waiting') return;
 
-        const slot = room.players.findIndex(p => p === null);
-        if (slot !== -1) {
+        const allowedSlots = (room.maxPlayers === 2) ? [0, 1] : [0, 1, 2, 3];
+        const slot = allowedSlots.find(idx => room.players[idx] === null);
+        if (slot !== undefined) {
             const botNames = ['روبوت المارد 🧞', 'روبوت الصقر 🦅', 'روبوت النجم ⭐', 'روبوت الفارس ⚔️'];
             room.players[slot] = {
                 id: `bot_${Date.now()}_${slot}`,
