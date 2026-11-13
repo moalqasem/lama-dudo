@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261113_05">
+    <link rel="stylesheet" href="css/style.css?v=20261113_06">
 </head>
 <body>
     <div id="app" class="app-container">
@@ -98,7 +98,10 @@
                     <span id="display-room-code" class="code-value">----</span>
                     <button id="btn-copy-code" class="btn-copy" title="نسخ الرمز">📋</button>
                 </div>
-                <div class="room-mode-tag" id="room-current-mode-badge">🎲 كلاسيكي</div>
+                <div class="room-header-actions">
+                    <button id="btn-mic-waiting" class="btn-tool btn-mic" title="تفعيل / كتم المايكروفون">🎙️</button>
+                    <div class="room-mode-tag" id="room-current-mode-badge">🎲 كلاسيكي</div>
+                </div>
             </header>
 
             <div class="waiting-body">
@@ -215,6 +218,7 @@
 
                 <div class="game-quick-tools">
                     <button id="btn-mic-toggle" class="btn-tool btn-mic" title="تفعيل / كتم المايكروفون">🎙️</button>
+                    <button id="btn-mic-test" class="btn-tool" title="فحص المايك (سماع صوتي) 🎧">🎧</button>
                     <button id="btn-sound-toggle" class="btn-tool" title="كتم / تشغيل الصوت">🔊</button>
                     <button id="btn-dice-skin" class="btn-tool" title="تغيير شكل النرد 🎨">🎨</button>
                     <button id="btn-chat-toggle" class="btn-tool" title="الدردشة">💬</button>
@@ -449,9 +453,10 @@
 
     <!-- Scripts -->
     <script src="/socket.io/socket.io.js"></script>
-    <script src="js/audio.js?v=20261113_05"></script>
-    <script src="js/board.js?v=20261113_05"></script>
-    <script src="js/offline-engine.js?v=20261113_05"></script>
-    <script src="js/game.js?v=20261113_05"></script>
+    <script src="js/audio.js?v=20261113_06"></script>
+    <script src="js/voice.js?v=20261113_06"></script>
+    <script src="js/board.js?v=20261113_06"></script>
+    <script src="js/offline-engine.js?v=20261113_06"></script>
+    <script src="js/game.js?v=20261113_06"></script>
 </body>
 </html>

@@ -74,6 +74,7 @@
         btnCopy: document.getElementById('btn-copy-code'),
         btnLeave: document.getElementById('btn-leave-room'),
         btnStart: document.getElementById('btn-start-game'),
+        btnMicWaiting: document.getElementById('btn-mic-waiting'),
         nameSlots: [
             document.getElementById('name-slot-0'),
             document.getElementById('name-slot-1'),
@@ -102,6 +103,7 @@
         btnRollDice: document.getElementById('btn-roll-dice'),
         moveInstruction: document.getElementById('move-instruction'),
         btnMicToggle: document.getElementById('btn-mic-toggle'),
+        btnMicTest: document.getElementById('btn-mic-test'),
         btnDiceSkin: document.getElementById('btn-dice-skin'),
         diceSkinsModal: document.getElementById('dice-skins-modal'),
         btnCloseDiceSkins: document.getElementById('btn-close-dice-skins'),
@@ -158,6 +160,34 @@
         setTimeout(() => {
             gameEls.toast.classList.remove('show');
         }, duration);
+    }
+
+    // Initialize WebRTC Voice Chat
+    if (window.VoiceChat) {
+        window.VoiceChat.init({
+            socket: socket,
+            getMyPlayerIndex: () => state.myPlayerIndex,
+            onSpeakingChange: (pIdx, speaking) => {
+                setPlayerSpeaking(pIdx, speaking);
+            },
+            onMicStateChange: (active) => {
+                state.micActive = active;
+                [gameEls.btnMicToggle, roomEls.btnMicWaiting].forEach(btn => {
+                    if (btn) {
+                        if (active) {
+                            btn.classList.add('active');
+                            btn.textContent = '🎙️';
+                        } else {
+                            btn.classList.remove('active');
+                            btn.textContent = '🔇';
+                        }
+                    }
+                });
+            },
+            onToast: (msg) => {
+                showToast(msg);
+            }
+        });
     }
 
     // 3D Dice Face Rotation Mapping
@@ -493,33 +523,24 @@
         }, 800);
     }
 
+    // Player Speaking UI Indicator Helper
+    function setPlayerSpeaking(playerIndex, speaking) {
+        const card = gameEls.playerCards[playerIndex];
+        const slot = document.querySelector(`.player-slot[data-slot="${playerIndex}"]`);
+        if (card) {
+            if (speaking) card.classList.add('speaking');
+            else card.classList.remove('speaking');
+        }
+        if (slot) {
+            if (speaking) slot.classList.add('speaking');
+            else slot.classList.remove('speaking');
+        }
+    }
+
     // Voice Chat WebRTC / Audio Toggle
     async function toggleMicrophone() {
-        if (!state.micActive) {
-            try {
-                state.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                state.micActive = true;
-                gameEls.btnMicToggle.classList.add('active');
-                gameEls.btnMicToggle.textContent = '🎙️';
-                showToast('تم تشغيل المايكروفون 🎙️');
-                socket.emit('voice_speaking', { speaking: true });
-            } catch (err) {
-                // If permission denied or unavailable, simulate voice indicator
-                state.micActive = true;
-                gameEls.btnMicToggle.classList.add('active');
-                socket.emit('voice_speaking', { speaking: true });
-                showToast('تم تفعيل إشارة المايك 🎙️');
-            }
-        } else {
-            if (state.micStream) {
-                state.micStream.getTracks().forEach(t => t.stop());
-                state.micStream = null;
-            }
-            state.micActive = false;
-            gameEls.btnMicToggle.classList.remove('active');
-            gameEls.btnMicToggle.textContent = '🔇';
-            showToast('تم كتم المايكروفون');
-            socket.emit('voice_speaking', { speaking: false });
+        if (window.VoiceChat) {
+            await window.VoiceChat.toggleMic();
         }
     }
 
@@ -671,6 +692,10 @@
             if (cardName) cardName.textContent = p ? p.name : 'فارغ';
         });
 
+        if (window.VoiceChat) {
+            window.VoiceChat.updatePeers(data.players);
+        }
+
         updateUI();
     });
 
@@ -716,16 +741,7 @@
     });
 
     onEvent('voice_speaking_update', ({ playerIndex, speaking }) => {
-        const card = gameEls.playerCards[playerIndex];
-        const slot = document.querySelector(`.player-slot[data-slot="${playerIndex}"]`);
-        if (card) {
-            if (speaking) card.classList.add('speaking');
-            else card.classList.remove('speaking');
-        }
-        if (slot) {
-            if (speaking) slot.classList.add('speaking');
-            else slot.classList.remove('speaking');
-        }
+        setPlayerSpeaking(playerIndex, speaking);
     });
 
     onEvent('power_used', ({ power, message }) => {
@@ -930,7 +946,26 @@
     });
 
     // Microphone toggle
-    gameEls.btnMicToggle.addEventListener('click', toggleMicrophone);
+    if (gameEls.btnMicToggle) {
+        gameEls.btnMicToggle.addEventListener('click', toggleMicrophone);
+    }
+    if (roomEls.btnMicWaiting) {
+        roomEls.btnMicWaiting.addEventListener('click', toggleMicrophone);
+    }
+
+    // Microphone Self-Test (Loopback toggle to hear yourself)
+    if (gameEls.btnMicTest) {
+        gameEls.btnMicTest.addEventListener('click', () => {
+            if (window.VoiceChat) {
+                const isTesting = window.VoiceChat.toggleSelfTest();
+                if (isTesting) {
+                    gameEls.btnMicTest.classList.add('active');
+                } else {
+                    gameEls.btnMicTest.classList.remove('active');
+                }
+            }
+        });
+    }
 
     // Chat Drawer
     gameEls.btnChatToggle.addEventListener('click', () => {
@@ -954,7 +989,7 @@
 
     gameEls.emojiBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            socket.emit('send_chat', { text: btn.textContent });
+            emitEvent('send_chat', { text: btn.textContent });
         });
     });
 

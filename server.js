@@ -676,7 +676,26 @@ io.on('connection', (socket) => {
         });
     });
 
-    // Voice Chat State
+    // WebRTC Voice Chat Signaling Relay
+    socket.on('voice_signal', ({ targetId, signal }) => {
+        if (!socket.roomCode || !targetId) return;
+        io.to(targetId).emit('voice_signal', {
+            fromId: socket.id,
+            playerIndex: socket.playerIndex,
+            signal: signal
+        });
+    });
+
+    socket.on('voice_status', ({ active }) => {
+        if (!socket.roomCode) return;
+        socket.to(socket.roomCode).emit('voice_status_update', {
+            socketId: socket.id,
+            playerIndex: socket.playerIndex,
+            active: !!active
+        });
+    });
+
+    // Voice Chat Speaking Indicator State
     socket.on('voice_speaking', ({ speaking }) => {
         if (!socket.roomCode) return;
         io.to(socket.roomCode).emit('voice_speaking_update', {
@@ -705,6 +724,11 @@ io.on('connection', (socket) => {
         if (!socket.roomCode) return;
         const room = rooms.get(socket.roomCode);
         if (!room) return;
+
+        socket.to(socket.roomCode).emit('peer_disconnected', {
+            socketId: socket.id,
+            playerIndex: socket.playerIndex
+        });
 
         const pIdx = socket.playerIndex;
         if (room.gameState.status === 'waiting') {
