@@ -1,7 +1,39 @@
 // Client Game Controller - Lama Ludo Edition
 
 (function () {
-    const socket = io();
+    const socket = (typeof io === 'function') ? io() : null;
+
+    let offlineRoom = null;
+    const clientListeners = {};
+
+    function onEvent(event, handler) {
+        clientListeners[event] = handler;
+        if (socket && socket.on) {
+            socket.on(event, handler);
+        }
+    }
+
+    function emitEvent(event, data = {}) {
+        if (offlineRoom) {
+            if (event === 'roll_dice') offlineRoom.rollDice();
+            else if (event === 'move_token') offlineRoom.moveToken(0, data.tokenIndex);
+            else if (event === 'use_magic_dice') offlineRoom.useMagicDice(data.chosenValue);
+            else if (event === 'use_shield') offlineRoom.useShield(data.tokenIndex);
+            else if (event === 'use_rocket') offlineRoom.useRocket(data.targetPlayerIdx, data.targetTokenIdx);
+            else if (event === 'send_gift') offlineRoom.sendGift(data.fromSlot, data.toSlot, data.giftType);
+            return;
+        }
+
+        if (socket && socket.connected) {
+            socket.emit(event, data);
+        } else {
+            if (event === 'create_room' || event === 'play_offline' || event === 'join_room') {
+                state.isOfflineMode = true;
+                offlineRoom = window.OfflineLudoEngine.createRoom(data.playerName || 'أنت', state.selectedMode, clientListeners);
+                offlineRoom.start();
+            }
+        }
+    }
 
     // App State
     const state = {
@@ -306,7 +338,7 @@
                     g.style.cursor = 'pointer';
                     g.addEventListener('click', () => {
                         window.soundManager.playClick();
-                        socket.emit('move_token', { tokenIndex: tIdx });
+                        emitEvent('move_token', { tokenIndex: tIdx });
                     });
                 }
 
@@ -567,13 +599,13 @@
         }
     }
 
-    // ================= Socket Event Handlers =================
+    // ================= Socket / Offline Event Handlers =================
 
-    socket.on('connect', () => {
+    onEvent('connect', () => {
         console.log('Connected to LAMA DUDO Server');
     });
 
-    socket.on('room_created', ({ code, playerIndex }) => {
+    onEvent('room_created', ({ code, playerIndex }) => {
         state.roomCode = code;
         state.myPlayerIndex = playerIndex;
         state.isHost = true;
@@ -581,7 +613,7 @@
         showScreen('room');
     });
 
-    socket.on('joined_room', ({ code, playerIndex }) => {
+    onEvent('joined_room', ({ code, playerIndex }) => {
         state.roomCode = code;
         state.myPlayerIndex = playerIndex;
         state.isHost = false;
@@ -589,10 +621,10 @@
         showScreen('room');
     });
 
-    socket.on('room_update', (data) => {
+    onEvent('room_update', (data) => {
         state.players = data.players;
         state.gameState = data.gameState;
-        state.isHost = (socket.id === data.hostId);
+        state.isHost = (socket && socket.id === data.hostId) || state.isOfflineMode;
 
         // Update mode badge
         const modeNames = { classic: '🎲 كلاسيكي', quick: '⚡ سريع (Quick)', magic: '🪄 سحري (Magic)' };
@@ -609,7 +641,7 @@
                     if (p.isBot && state.isHost) {
                         botBtn.textContent = '✕ حذف';
                         botBtn.style.display = 'block';
-                        botBtn.onclick = () => socket.emit('remove_bot', { slotIndex: idx });
+                        botBtn.onclick = () => emitEvent('remove_bot', { slotIndex: idx });
                     } else {
                         botBtn.style.display = 'none';
                     }
@@ -619,7 +651,7 @@
                 if (botBtn) {
                     botBtn.textContent = '+ بوت';
                     botBtn.style.display = state.isHost ? 'block' : 'none';
-                    botBtn.onclick = () => socket.emit('add_bot');
+                    botBtn.onclick = () => emitEvent('add_bot');
                 }
             }
         });
@@ -642,14 +674,14 @@
         updateUI();
     });
 
-    socket.on('game_started', () => {
+    onEvent('game_started', () => {
         initBoard();
         showScreen('game');
         updateUI();
         renderMagicTiles();
     });
 
-    socket.on('dice_rolled', ({ playerIndex, diceValue, validTokens }) => {
+    onEvent('dice_rolled', ({ playerIndex, diceValue, validTokens }) => {
         if (state.gameState) {
             state.gameState.currentTurn = playerIndex;
             state.gameState.diceValue = diceValue;
@@ -665,11 +697,11 @@
         });
     });
 
-    socket.on('token_moved', ({ playerIndex, tokenIndex, oldStep, newStep, isSpawn, captured }) => {
+    onEvent('token_moved', ({ playerIndex, tokenIndex, oldStep, newStep, isSpawn, captured }) => {
         animateTokenMove(playerIndex, tokenIndex, oldStep, newStep, isSpawn, captured);
     });
 
-    socket.on('pickup_collected', ({ trackIdx, power, icon, title, playerName }) => {
+    onEvent('pickup_collected', ({ trackIdx, power, icon, title, playerName }) => {
         if (state.gameState && state.gameState.magicTiles) {
             delete state.gameState.magicTiles[trackIdx];
             renderMagicTiles();
@@ -679,11 +711,11 @@
         addChatMessage({ senderName: '🪄 بطاقة سحرية', text: `حصل ${playerName} على ${title} بالوقوف على مربعه في اللوح!`, isSystem: true });
     });
 
-    socket.on('gift_received', (data) => {
+    onEvent('gift_received', (data) => {
         triggerFlyingGift(data.fromSlot, data.toSlot, data.giftType, data.fromName, data.toName);
     });
 
-    socket.on('voice_speaking_update', ({ playerIndex, speaking }) => {
+    onEvent('voice_speaking_update', ({ playerIndex, speaking }) => {
         const card = gameEls.playerCards[playerIndex];
         const slot = document.querySelector(`.player-slot[data-slot="${playerIndex}"]`);
         if (card) {
@@ -696,27 +728,27 @@
         }
     });
 
-    socket.on('power_used', ({ power, message }) => {
+    onEvent('power_used', ({ power, message }) => {
         if (power === 'rocket') window.soundManager.playRocket();
         if (power === 'shield') window.soundManager.playShield();
         showToast(message);
         addChatMessage({ senderName: '🪄 سحر', text: message, isSystem: true });
     });
 
-    socket.on('announcement', ({ text }) => {
+    onEvent('announcement', ({ text }) => {
         showToast(text);
         addChatMessage({ senderName: '📢 النظام', text: text, isSystem: true });
     });
 
-    socket.on('error_message', (msg) => {
+    onEvent('error_message', (msg) => {
         showToast(`⚠️ ${msg}`);
     });
 
-    socket.on('chat_received', (data) => {
+    onEvent('chat_received', (data) => {
         addChatMessage(data);
     });
 
-    socket.on('game_over', ({ winners }) => {
+    onEvent('game_over', ({ winners }) => {
         window.soundManager.playWin();
         showVictoryScreen(winners);
     });
@@ -762,7 +794,7 @@
     lobbyEls.btnCreate.addEventListener('click', () => {
         window.soundManager.playClick();
         const name = lobbyEls.playerName.value.trim() || 'الملك 👑';
-        socket.emit('create_room', { playerName: name, gameMode: state.selectedMode });
+        emitEvent('create_room', { playerName: name, gameMode: state.selectedMode });
     });
 
     // Join Room
@@ -774,7 +806,7 @@
             showToast('الرجاء كتابة رمز الغرفة أولاً');
             return;
         }
-        socket.emit('join_room', { code: code, playerName: name });
+        emitEvent('join_room', { code: code, playerName: name });
     });
 
     // Offline / Instant Play vs Bots
@@ -782,21 +814,8 @@
         window.soundManager.playClick();
         const name = lobbyEls.playerName.value.trim() || 'أنت';
         state.isOfflineMode = true;
-
-        socket.emit('create_room', { playerName: name, gameMode: state.selectedMode });
-
-        setTimeout(() => {
-            socket.emit('add_bot');
-            setTimeout(() => {
-                socket.emit('add_bot');
-                setTimeout(() => {
-                    socket.emit('add_bot');
-                    setTimeout(() => {
-                        socket.emit('start_game');
-                    }, 400);
-                }, 200);
-            }, 200);
-        }, 300);
+        offlineRoom = window.OfflineLudoEngine.createRoom(name, state.selectedMode, clientListeners);
+        offlineRoom.start();
     });
 
     // Copy Room Code
@@ -815,13 +834,13 @@
     // Start Game
     roomEls.btnStart.addEventListener('click', () => {
         window.soundManager.playClick();
-        socket.emit('start_game');
+        emitEvent('start_game');
     });
 
     // Roll Dice
     gameEls.btnRollDice.addEventListener('click', () => {
         window.soundManager.playClick();
-        socket.emit('roll_dice');
+        emitEvent('roll_dice');
     });
 
     // ================= LAMA GIFTS INTERACTION =================
@@ -844,7 +863,7 @@
         item.addEventListener('click', () => {
             const giftType = item.getAttribute('data-gift');
             if (state.giftTargetSlot !== null) {
-                socket.emit('send_gift', {
+                emitEvent('send_gift', {
                     toSlot: state.giftTargetSlot,
                     giftType: giftType
                 });
@@ -868,7 +887,7 @@
         btn.addEventListener('click', () => {
             const num = parseInt(btn.getAttribute('data-num'), 10);
             gameEls.magicDiceModal.classList.remove('active');
-            socket.emit('use_magic_dice', { chosenValue: num });
+            emitEvent('use_magic_dice', { chosenValue: num });
         });
     });
 
@@ -879,7 +898,7 @@
         const tokens = state.gameState.tokens[state.myPlayerIndex];
         const activeIdx = tokens.findIndex(s => s >= 0 && s < 56);
         const tokenToShield = (activeIdx !== -1) ? activeIdx : 0;
-        socket.emit('use_shield', { tokenIndex: tokenToShield });
+        emitEvent('use_shield', { tokenIndex: tokenToShield });
     });
 
     // Rocket
@@ -903,7 +922,7 @@
         }
 
         if (targetP !== -1) {
-            socket.emit('use_rocket', { targetPlayerIdx: targetP, targetTokenIdx: targetT });
+            emitEvent('use_rocket', { targetPlayerIdx: targetP, targetTokenIdx: targetT });
         } else {
             showToast('لا توجد قطع خصوم نشطة على المسار لاستهدافها!');
         }
@@ -923,7 +942,7 @@
     function sendChat() {
         const text = gameEls.chatInput.value.trim();
         if (text) {
-            socket.emit('send_chat', { text: text });
+            emitEvent('send_chat', { text: text });
             gameEls.chatInput.value = '';
         }
     }
