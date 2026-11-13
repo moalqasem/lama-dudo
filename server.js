@@ -13,6 +13,7 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -732,8 +733,8 @@ app.get('/', (req, res) => {
 });
 
 if (!process.env.VERCEL) {
-    server.listen(PORT, () => {
-        console.log(`Ludo Game Server running on http://localhost:${PORT}`);
+    server.listen(PORT, HOST, () => {
+        console.log(`LAMA DUDO Server running on http://${HOST}:${PORT}`);
     });
 }
 

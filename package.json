@@ -1,14 +1,17 @@
 {
-  "name": "pip",
+  "name": "lama-dudo",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "LAMA DUDO - Royal Arabic Ludo Game",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["ludo", "game", "arabic", "lama-dudo", "multiplayer"],
+  "author": "moalqasem",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
