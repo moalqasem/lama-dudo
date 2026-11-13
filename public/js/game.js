@@ -966,12 +966,16 @@
     });
 
     // Rules modal
-    gameEls.btnRulesToggle.addEventListener('click', () => {
-        gameEls.rulesModal.classList.add('active');
-    });
-    gameEls.btnCloseRules.addEventListener('click', () => {
-        gameEls.rulesModal.classList.remove('active');
-    });
+    if (gameEls.btnRulesToggle) {
+        gameEls.btnRulesToggle.addEventListener('click', () => {
+            if (gameEls.rulesModal) gameEls.rulesModal.classList.add('active');
+        });
+    }
+    if (gameEls.btnCloseRules) {
+        gameEls.btnCloseRules.addEventListener('click', () => {
+            if (gameEls.rulesModal) gameEls.rulesModal.classList.remove('active');
+        });
+    }
 
     // Quit Game
     gameEls.btnQuitGame.addEventListener('click', () => {

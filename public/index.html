@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261113_04">
+    <link rel="stylesheet" href="css/style.css?v=20261113_05">
 </head>
 <body>
     <div id="app" class="app-container">
@@ -214,10 +214,9 @@
                 </div>
 
                 <div class="game-quick-tools">
-                    <button id="btn-dice-skin" class="btn-tool" title="تغيير شكل النرد 🎨">🎨</button>
                     <button id="btn-mic-toggle" class="btn-tool btn-mic" title="تفعيل / كتم المايكروفون">🎙️</button>
                     <button id="btn-sound-toggle" class="btn-tool" title="كتم / تشغيل الصوت">🔊</button>
-                    <button id="btn-rules-toggle" class="btn-tool" title="القواعد">📖</button>
+                    <button id="btn-dice-skin" class="btn-tool" title="تغيير شكل النرد 🎨">🎨</button>
                     <button id="btn-chat-toggle" class="btn-tool" title="الدردشة">💬</button>
                     <button id="btn-quit-game" class="btn-tool" title="مغادرة">🚪</button>
                 </div>
@@ -270,17 +269,17 @@
                             <button id="power-magic-dice" class="power-btn" title="اختر رقم النرد يدوياً">
                                 <span class="p-icon">🎲</span>
                                 <span class="p-lbl">نرد سحري</span>
-                                <span class="p-badge" id="count-magic-dice">2</span>
+                                <span class="p-badge" id="count-magic-dice">0</span>
                             </button>
                             <button id="power-shield" class="power-btn" title="حماية قطعتك من الأكل">
                                 <span class="p-icon">🛡️</span>
                                 <span class="p-lbl">درع حماية</span>
-                                <span class="p-badge" id="count-shield">2</span>
+                                <span class="p-badge" id="count-shield">0</span>
                             </button>
                             <button id="power-rocket" class="power-btn" title="تفجير قطعة خصم وإرجاعها للبيت">
                                 <span class="p-icon">🚀</span>
                                 <span class="p-lbl">صاروخ</span>
-                                <span class="p-badge" id="count-rocket">1</span>
+                                <span class="p-badge" id="count-rocket">0</span>
                             </button>
                         </div>
                     </div>
@@ -450,9 +449,9 @@
 
     <!-- Scripts -->
     <script src="/socket.io/socket.io.js"></script>
-    <script src="js/audio.js?v=20261113_04"></script>
-    <script src="js/board.js?v=20261113_04"></script>
-    <script src="js/offline-engine.js?v=20261113_04"></script>
-    <script src="js/game.js?v=20261113_04"></script>
+    <script src="js/audio.js?v=20261113_05"></script>
+    <script src="js/board.js?v=20261113_05"></script>
+    <script src="js/offline-engine.js?v=20261113_05"></script>
+    <script src="js/game.js?v=20261113_05"></script>
 </body>
 </html>

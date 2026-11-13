@@ -72,10 +72,10 @@ window.OfflineLudoEngine = (function () {
                     [false, false, false, false]
                 ],
                 powers: [
-                    { magicDice: 2, shield: 2, rocket: 1 },
-                    { magicDice: 1, shield: 1, rocket: 1 },
-                    { magicDice: 1, shield: 1, rocket: 1 },
-                    { magicDice: 1, shield: 1, rocket: 1 }
+                    { magicDice: 0, shield: 0, rocket: 0 },
+                    { magicDice: 0, shield: 0, rocket: 0 },
+                    { magicDice: 0, shield: 0, rocket: 0 },
+                    { magicDice: 0, shield: 0, rocket: 0 }
                 ]
             };
         }
