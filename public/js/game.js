@@ -37,7 +37,7 @@
 
     // App State
     const state = {
-        selectedMode: 'classic', // 'classic' | 'quick' | 'magic'
+        selectedMode: 'magic', // 'classic' | 'quick' | 'magic'
         myPlayerIndex: 0,
         roomCode: null,
         isHost: false,

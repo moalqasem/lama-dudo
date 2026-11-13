@@ -32,7 +32,7 @@ window.OfflineLudoEngine = (function () {
     class OfflineRoom {
         constructor(playerName, gameMode, clientCallbacks) {
             this.callbacks = clientCallbacks;
-            this.gameMode = gameMode || 'classic';
+            this.gameMode = gameMode || 'magic';
             this.code = 'LOCAL';
             this.roundCount = 0;
             this.players = [

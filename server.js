@@ -499,7 +499,7 @@ function broadcastRoomState(room) {
 
 io.on('connection', (socket) => {
     // Create new room with chosen mode
-    socket.on('create_room', ({ playerName, gameMode = 'classic' }) => {
+    socket.on('create_room', ({ playerName, gameMode = 'magic' }) => {
         const code = generateRoomCode();
         const room = {
             code: code,
