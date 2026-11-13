@@ -777,14 +777,6 @@ input[type="text"]:focus {
     font-size: 0.95rem;
 }
 
-.dice-roll-area {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-}
-
 /* 3D Gold Dice */
 .dice-stage {
     width: 90px;
@@ -1521,177 +1513,86 @@ input[type="text"]:focus {
         font-size: 0.85rem;
     }
 
-    /* Whole app container on mobile phone: 100% viewport fit, zero scrolling */
-    html, body {
-        overflow: hidden !important;
-        height: 100dvh !important;
-        min-height: 100dvh !important;
-        max-height: 100dvh !important;
-    }
-    .app-container {
-        padding: 4px 6px;
-        height: 100dvh;
-        max-height: 100dvh;
-        overflow: hidden;
-        justify-content: flex-start;
-    }
-    #game-screen {
-        height: 100%;
-        max-height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        overflow: hidden;
-    }
+    /* Game Screen Top Bar on mobile phone */
     .game-top-bar {
-        gap: 4px;
-        margin-bottom: 2px;
-        flex-wrap: nowrap;
-        justify-content: space-between;
-        align-items: center;
-        height: 36px;
+        gap: 6px;
+        margin-bottom: 6px;
     }
     .player-cards-row {
         gap: 4px;
-        flex-wrap: nowrap;
-        flex: 1;
-        overflow: hidden;
     }
     .player-card {
-        padding: 2px 6px;
+        padding: 4px 5px;
         gap: 4px;
         border-radius: 8px;
-        height: 32px;
     }
     .avatar-box {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
     }
     .p-dot {
-        font-size: 0.85rem;
+        font-size: 0.95rem;
     }
     .p-name {
-        font-size: 0.65rem;
-        max-width: 48px;
+        font-size: 0.68rem;
+        max-width: 50px;
     }
     .p-home-count {
-        font-size: 0.6rem;
-        padding: 1px 3px;
+        font-size: 0.62rem;
+        padding: 1px 4px;
     }
     .game-quick-tools {
-        gap: 3px;
-        flex-wrap: nowrap;
+        gap: 5px;
     }
     .btn-tool {
-        width: 28px;
-        height: 28px;
-        font-size: 0.85rem;
-        border-radius: 6px;
+        width: 32px;
+        height: 32px;
+        font-size: 0.95rem;
     }
 
-    /* Game Main Area & Board & Control Fitting on mobile screen */
-    .game-main-area {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: space-evenly;
-        gap: 4px;
-        width: 100%;
-        overflow: hidden;
-    }
+    /* Board & Control Fitting on mobile screen */
     .board-wrapper {
         width: 100%;
-        max-width: min(92vw, 42vh);
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        max-width: min(96vw, 48vh);
     }
     .board-container {
-        border-radius: 14px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 0 2px #1c100b, 0 0 0 3px #f59e0b;
+        border-radius: 16px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5), 0 0 0 2px #1c100b, 0 0 0 4px #f59e0b;
     }
     .control-panel {
         width: 100%;
-        max-width: min(92vw, 42vh);
-        padding: 4px 8px;
-        gap: 3px;
-        border-radius: 12px;
-        background: rgba(15, 23, 42, 0.85);
+        max-width: min(96vw, 48vh);
+        padding: 10px 12px;
+        gap: 8px;
+        border-radius: 14px;
     }
     .turn-status-banner {
-        padding: 2px 8px;
+        padding: 5px 10px;
         margin-bottom: 0;
     }
     .turn-text {
-        font-size: 0.76rem;
-    }
-
-    /* Horizontal compact Dice & Roll area */
-    .dice-roll-area {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        width: 100%;
-        padding: 1px 0;
+        font-size: 0.84rem;
     }
     .dice-stage {
-        width: 50px;
-        height: 50px;
-        margin: 0;
+        width: 76px;
+        height: 76px;
+        margin: 2px 0;
     }
-    .dice-cube {
-        width: 36px;
-        height: 36px;
-    }
-    .dice-face {
-        width: 36px;
-        height: 36px;
-        border-radius: 6px;
-    }
-    .dice-face.face-1 { transform: translateZ(18px); }
-    .dice-face.face-2 { transform: rotateY(90deg) translateZ(18px); }
-    .dice-face.face-3 { transform: rotateY(180deg) translateZ(18px); }
-    .dice-face.face-4 { transform: rotateY(-90deg) translateZ(18px); }
-    .dice-face.face-5 { transform: rotateX(90deg) translateZ(18px); }
-    .dice-face.face-6 { transform: rotateX(-90deg) translateZ(18px); }
-
     .btn-roll {
-        padding: 6px 16px;
-        font-size: 0.95rem;
-        border-radius: 10px;
-        height: 40px;
-        flex: 1;
-        max-width: 170px;
+        padding: 10px 20px;
+        font-size: 1.05rem;
+        border-radius: 12px;
     }
-
-    /* Compact Magic Powers Dock */
     .magic-powers-dock {
-        padding: 3px 4px;
-        gap: 2px;
-        margin-top: 0;
-    }
-    .dock-title {
-        display: none; /* Hidden on mobile to save vertical space */
-    }
-    .dock-powers-row {
+        padding: 8px;
         gap: 4px;
     }
     .power-btn {
-        padding: 3px 6px;
-        font-size: 0.68rem;
-        gap: 2px;
+        padding: 5px 6px;
+        font-size: 0.72rem;
     }
     .power-btn .p-icon {
-        font-size: 0.95rem;
-    }
-    .p-badge {
-        font-size: 0.6rem;
-        min-width: 14px;
-        height: 14px;
-        line-height: 14px;
+        font-size: 1.1rem;
     }
 
     /* Modals on mobile */
