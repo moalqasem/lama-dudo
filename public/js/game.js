@@ -105,7 +105,6 @@
         btnRollDice: document.getElementById('btn-roll-dice'),
         moveInstruction: document.getElementById('move-instruction'),
         btnMicToggle: document.getElementById('btn-mic-toggle'),
-        btnMicTest: document.getElementById('btn-mic-test'),
         btnDiceSkin: document.getElementById('btn-dice-skin'),
         diceSkinsModal: document.getElementById('dice-skins-modal'),
         btnCloseDiceSkins: document.getElementById('btn-close-dice-skins'),
@@ -982,20 +981,6 @@
     }
     if (roomEls.btnMicWaiting) {
         roomEls.btnMicWaiting.addEventListener('click', toggleMicrophone);
-    }
-
-    // Microphone Self-Test (Loopback toggle to hear yourself)
-    if (gameEls.btnMicTest) {
-        gameEls.btnMicTest.addEventListener('click', () => {
-            if (window.VoiceChat) {
-                const isTesting = window.VoiceChat.toggleSelfTest();
-                if (isTesting) {
-                    gameEls.btnMicTest.classList.add('active');
-                } else {
-                    gameEls.btnMicTest.classList.remove('active');
-                }
-            }
-        });
     }
 
     // Chat Drawer

@@ -1,5 +1,5 @@
-// WebRTC Voice Chat Manager for LAMA DUDO (لاما دودو الملكية)
-// Handles real-time peer-to-peer audio streaming, local voice activity detection (VAD), and mic controls.
+// WebRTC Peer-to-Peer Voice Chat for LAMA DUDO (لاما دودو الملكية)
+// Streams microphone audio in real time to the other player's speakers/device.
 
 (function () {
     const RTC_CONFIG = {
@@ -18,16 +18,12 @@
             this.roomPlayers = [];
             this.localStream = null;
             this.isMicActive = false;
-            this.loopbackEnabled = false; // Self-test audio loopback
 
-            // Map: socketId -> { pc, targetPlayerIndex, stream, audioEl }
+            // Map: socketId -> { pc, targetPlayerIndex, pendingCandidates, audioEl }
             this.peers = new Map();
 
-            // Web Audio Context for VAD & self-test
+            // AudioContext for speaker output and speaking detection
             this.audioCtx = null;
-            this.localSource = null;
-            this.localAnalyser = null;
-            this.loopbackGain = null;
             this.vadInterval = null;
 
             // Callbacks
@@ -49,12 +45,12 @@
                     await this.handleIncomingSignal(fromId, playerIndex, signal);
                 });
 
-                // Peer status (mic on/off)
+                // Status updates (peer mic active/muted)
                 this.socket.on('voice_status_update', ({ socketId, playerIndex, active }) => {
-                    console.log(`[Voice] Peer ${socketId} (slot ${playerIndex}) mic active: ${active}`);
+                    console.log(`[Voice] Peer ${socketId} (slot ${playerIndex}) mic: ${active ? 'ON' : 'OFF'}`);
                 });
 
-                // Speaking update from server (synchronizes speaking indicator across all clients)
+                // Speaking update (avatar glowing ring)
                 this.socket.on('voice_speaking_update', ({ playerIndex, speaking }) => {
                     if (this.onSpeakingChange) {
                         this.onSpeakingChange(playerIndex, speaking);
@@ -67,7 +63,7 @@
                 });
             }
 
-            // Global user gesture unlock for audio playback & AudioContext
+            // Resume audio output on any user click/touch
             const unlockAudio = () => {
                 if (this.audioCtx && this.audioCtx.state === 'suspended') {
                     this.audioCtx.resume().catch(() => {});
@@ -82,7 +78,7 @@
             window.addEventListener('touchstart', unlockAudio, { passive: true });
         }
 
-        // Toggle Microphone ON/OFF
+        // Toggle Microphone
         async toggleMic() {
             if (!this.isMicActive) {
                 return await this.startMic();
@@ -92,17 +88,15 @@
             }
         }
 
-        // Start Microphone & Broadcast Audio
+        // Start Microphone & Broadcast to other players
         async startMic() {
             try {
                 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                     throw new Error('المتصفح لا يدعم الوصول للمايكروفون.');
                 }
 
-                // If stream already exists, simply enable tracks
-                if (this.localStream && this.localStream.getAudioTracks().length > 0) {
-                    this.localStream.getAudioTracks().forEach(t => { t.enabled = true; });
-                } else {
+                // Capture local mic if not already captured
+                if (!this.localStream || this.localStream.getAudioTracks().length === 0) {
                     this.localStream = await navigator.mediaDevices.getUserMedia({
                         audio: {
                             echoCancellation: true,
@@ -111,31 +105,34 @@
                         },
                         video: false
                     });
+                } else {
+                    this.localStream.getAudioTracks().forEach(t => { t.enabled = true; });
                 }
 
                 this.isMicActive = true;
 
-                // Add or update tracks in all active peer connections
-                this.peers.forEach((peer) => {
-                    this.addLocalStreamToPeer(peer.pc);
-                });
+                // Push audio track to all peer connections and renegotiate so the other player receives sound
+                for (const [peerId, peer] of this.peers.entries()) {
+                    this.attachLocalTrackToPeer(peer.pc);
+                    await this.renegotiatePeer(peerId, peer.pc);
+                }
 
-                // Start local Voice Activity Detection (VAD)
+                // Start local speaking indicator detection
                 this.startLocalVAD();
 
-                // Notify server and peers
+                // Notify room
                 if (this.socket && this.socket.connected) {
                     this.socket.emit('voice_status', { active: true });
                 }
 
                 if (this.onMicStateChange) this.onMicStateChange(true);
-                this.onToast('🎙️ تم تشغيل المايك! تحدث وصوتك سيصل لجميع اللاعبين.');
+                this.onToast('🎙️ المايك شغال! صوتك الآن مسموع عند اللاعب الآخر.');
                 return true;
             } catch (err) {
                 console.error('[Voice] Error starting mic:', err);
                 this.isMicActive = false;
                 if (this.onMicStateChange) this.onMicStateChange(false);
-                this.onToast('⚠️ تعذر الوصول للمايك. يرجى السماح بالإذن في المتصفح.');
+                this.onToast('⚠️ تعذر تشغيل المايك. يرجى السماح بالإذن في المتصفح.');
                 return false;
             }
         }
@@ -144,20 +141,17 @@
         stopMic() {
             this.isMicActive = false;
 
-            // Mute local tracks (keeps peer connection alive)
             if (this.localStream) {
                 this.localStream.getAudioTracks().forEach(t => {
                     t.enabled = false;
                 });
             }
 
-            // Stop local VAD interval
             if (this.vadInterval) {
                 clearInterval(this.vadInterval);
                 this.vadInterval = null;
             }
 
-            // Reset speaking indicator for me
             const myIdx = (this.getMyPlayerIndex) ? this.getMyPlayerIndex() : 0;
             if (this.onSpeakingChange) {
                 this.onSpeakingChange(myIdx, false);
@@ -169,24 +163,41 @@
             }
 
             if (this.onMicStateChange) this.onMicStateChange(false);
-            this.onToast('🔇 تم كتم المايكروفون.');
+            this.onToast('🔇 تم كتم المايك.');
         }
 
-        // Add Local Audio Tracks to a Peer Connection
-        addLocalStreamToPeer(pc) {
+        // Attach local track to a peer connection
+        attachLocalTrackToPeer(pc) {
             if (!this.localStream) return;
+            const audioTrack = this.localStream.getAudioTracks()[0];
+            if (!audioTrack) return;
+
             const senders = pc.getSenders();
-            this.localStream.getAudioTracks().forEach(track => {
-                const existing = senders.find(s => s.track && s.track.kind === 'audio');
-                if (existing) {
-                    existing.replaceTrack(track).catch(err => console.warn('[Voice] replaceTrack error:', err));
-                } else {
-                    pc.addTrack(track, this.localStream);
-                }
-            });
+            const audioSender = senders.find(s => s.track && s.track.kind === 'audio');
+            if (audioSender) {
+                audioSender.replaceTrack(audioTrack).catch(e => console.warn('[Voice] replaceTrack:', e));
+            } else {
+                pc.addTrack(audioTrack, this.localStream);
+            }
         }
 
-        // Called on room_update with the players array
+        // Renegotiate peer connection when new track is added
+        async renegotiatePeer(targetId, pc) {
+            try {
+                const offer = await pc.createOffer({ offerToReceiveAudio: true });
+                await pc.setLocalDescription(offer);
+                if (this.socket && this.socket.connected) {
+                    this.socket.emit('voice_signal', {
+                        targetId: targetId,
+                        signal: { description: pc.localDescription }
+                    });
+                }
+            } catch (err) {
+                console.error(`[Voice] Error renegotiating with ${targetId}:`, err);
+            }
+        }
+
+        // Called on room_update with the active players array
         updatePeers(players) {
             if (!this.socket || !this.socket.id) return;
             this.roomPlayers = players || [];
@@ -199,9 +210,8 @@
 
                 currentPeerIds.add(p.id);
 
-                // If not connected to this peer yet:
                 if (!this.peers.has(p.id)) {
-                    // Deterministic initiator rule: lexicographically smaller socket.id initiates offer
+                    // Lower socket ID initiates offer
                     const isInitiator = (this.socket.id < p.id);
                     this.createPeer(p.id, idx, isInitiator);
                 } else {
@@ -209,7 +219,7 @@
                 }
             });
 
-            // Clean up any peers that left the room
+            // Clean up left peers
             this.peers.forEach((peer, peerId) => {
                 if (!currentPeerIds.has(peerId)) {
                     this.removePeer(peerId);
@@ -217,39 +227,32 @@
             });
         }
 
-        // Create Peer Connection
+        // Create RTCPeerConnection for a remote peer
         async createPeer(targetId, targetPlayerIndex, isInitiator) {
-            console.log(`[Voice] Creating RTC Peer for ${targetId} (slot ${targetPlayerIndex}, initiator: ${isInitiator})`);
+            console.log(`[Voice] Creating RTC connection for player ${targetPlayerIndex} (${targetId}), initiator: ${isInitiator}`);
             const pc = new RTCPeerConnection(RTC_CONFIG);
-
-            // Create dedicated audio element for this remote peer
-            let audioEl = document.getElementById(`audio-remote-${targetId}`);
-            if (!audioEl) {
-                audioEl = document.createElement('audio');
-                audioEl.id = `audio-remote-${targetId}`;
-                audioEl.className = 'remote-voice-audio';
-                audioEl.autoplay = true;
-                audioEl.playsInline = true;
-                audioEl.style.display = 'none';
-                document.body.appendChild(audioEl);
-            }
 
             const peerObj = {
                 pc,
                 targetPlayerIndex,
-                audioEl,
+                pendingCandidates: [],
                 stream: null
             };
             this.peers.set(targetId, peerObj);
 
-            // If we already have local stream, attach tracks
-            if (this.localStream) {
-                this.addLocalStreamToPeer(pc);
+            // Add bidirectional audio transceiver so audio is ready to flow immediately
+            if (pc.addTransceiver) {
+                pc.addTransceiver('audio', { direction: 'sendrecv' });
             }
 
-            // Handle ICE candidate generation
+            // If we already have local mic captured, attach track
+            if (this.localStream) {
+                this.attachLocalTrackToPeer(pc);
+            }
+
+            // ICE Candidate Generation
             pc.onicecandidate = (event) => {
-                if (event.candidate && this.socket) {
+                if (event.candidate && this.socket && this.socket.connected) {
                     this.socket.emit('voice_signal', {
                         targetId: targetId,
                         signal: { candidate: event.candidate }
@@ -257,42 +260,70 @@
                 }
             };
 
-            // Handle incoming remote audio stream
+            // INCOMING AUDIO TRACK FROM THE OTHER PLAYER
             pc.ontrack = (event) => {
-                console.log(`[Voice] Received remote audio stream from peer ${targetId}`);
-                const stream = event.streams[0];
-                peerObj.stream = stream;
-                audioEl.srcObject = stream;
-                const playPromise = audioEl.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(e => {
-                        console.log('[Voice] Remote audio autoplay waiting for user interaction');
-                    });
-                }
+                console.log(`[Voice] 🔊 RECEIVED REMOTE AUDIO TRACK from player ${targetPlayerIndex}! Playing through speakers...`);
+                const remoteStream = event.streams[0] || new MediaStream([event.track]);
+                peerObj.stream = remoteStream;
 
-                // Attach VAD to remote stream so their card speaks visually when voice arrives
-                this.attachRemoteVAD(stream, targetPlayerIndex);
+                // 1. Web Audio API Destination: Streams direct to hardware speakers
+                this.playStreamToSpeakers(remoteStream);
+
+                // 2. HTML Audio element backup
+                let audioEl = document.getElementById(`audio-remote-${targetId}`);
+                if (!audioEl) {
+                    audioEl = document.createElement('audio');
+                    audioEl.id = `audio-remote-${targetId}`;
+                    audioEl.className = 'remote-voice-audio';
+                    audioEl.autoplay = true;
+                    audioEl.playsInline = true;
+                    audioEl.style.position = 'fixed';
+                    audioEl.style.left = '-9999px';
+                    document.body.appendChild(audioEl);
+                }
+                audioEl.srcObject = remoteStream;
+                audioEl.volume = 1.0;
+                audioEl.play().catch(() => {});
+
+                // Remote Voice Speaking Ring
+                this.attachRemoteVAD(remoteStream, targetPlayerIndex);
             };
 
-            // If initiator, create and send offer
+            // If initiator, send initial offer
             if (isInitiator) {
                 try {
-                    const offer = await pc.createOffer({
-                        offerToReceiveAudio: true
-                    });
+                    const offer = await pc.createOffer({ offerToReceiveAudio: true });
                     await pc.setLocalDescription(offer);
-                    if (this.socket) {
+                    if (this.socket && this.socket.connected) {
                         this.socket.emit('voice_signal', {
                             targetId: targetId,
                             signal: { description: pc.localDescription }
                         });
                     }
                 } catch (err) {
-                    console.error('[Voice] Error creating offer:', err);
+                    console.error('[Voice] Initial offer error:', err);
                 }
             }
 
             return peerObj;
+        }
+
+        // Direct hardware speaker output via Web Audio API
+        playStreamToSpeakers(stream) {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!this.audioCtx) this.audioCtx = new AudioContext();
+                if (this.audioCtx.state === 'suspended') this.audioCtx.resume().catch(() => {});
+
+                const source = this.audioCtx.createMediaStreamSource(stream);
+                const gain = this.audioCtx.createGain();
+                gain.gain.value = 1.0;
+                source.connect(gain);
+                gain.connect(this.audioCtx.destination);
+                console.log('[Voice] Remote audio successfully connected to audioCtx.destination (speakers)');
+            } catch (err) {
+                console.warn('[Voice] playStreamToSpeakers error:', err);
+            }
         }
 
         // Handle incoming WebRTC signaling message
@@ -308,13 +339,21 @@
                     const desc = new RTCSessionDescription(signal.description);
                     await pc.setRemoteDescription(desc);
 
+                    // Drain pending candidates
+                    if (peer.pendingCandidates && peer.pendingCandidates.length > 0) {
+                        for (const cand of peer.pendingCandidates) {
+                            await pc.addIceCandidate(cand).catch(e => console.warn(e));
+                        }
+                        peer.pendingCandidates = [];
+                    }
+
                     if (desc.type === 'offer') {
                         if (this.localStream) {
-                            this.addLocalStreamToPeer(pc);
+                            this.attachLocalTrackToPeer(pc);
                         }
                         const answer = await pc.createAnswer();
                         await pc.setLocalDescription(answer);
-                        if (this.socket) {
+                        if (this.socket && this.socket.connected) {
                             this.socket.emit('voice_signal', {
                                 targetId: fromId,
                                 signal: { description: pc.localDescription }
@@ -322,7 +361,12 @@
                         }
                     }
                 } else if (signal.candidate) {
-                    await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+                    const iceCand = new RTCIceCandidate(signal.candidate);
+                    if (pc.remoteDescription && pc.remoteDescription.type) {
+                        await pc.addIceCandidate(iceCand);
+                    } else {
+                        peer.pendingCandidates.push(iceCand);
+                    }
                 }
             } catch (err) {
                 console.error(`[Voice] Error handling voice signal from ${fromId}:`, err);
@@ -334,40 +378,29 @@
             const peer = this.peers.get(targetId);
             if (peer) {
                 if (peer.pc) peer.pc.close();
-                if (peer.audioEl) peer.audioEl.remove();
+                const el = document.getElementById(`audio-remote-${targetId}`);
+                if (el) el.remove();
                 this.peers.delete(targetId);
-                console.log(`[Voice] Removed peer ${targetId}`);
+                console.log(`[Voice] Disconnected peer ${targetId}`);
             }
         }
 
-        // Local Voice Activity Detection (VAD)
+        // Local Voice Activity Detection (lights up speaking ring when voice is active)
         startLocalVAD() {
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (!this.audioCtx) this.audioCtx = new AudioContext();
-                if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+                if (this.audioCtx.state === 'suspended') this.audioCtx.resume().catch(() => {});
 
                 if (!this.localStream) return;
 
-                if (this.localSource) {
-                    try { this.localSource.disconnect(); } catch (e) {}
-                }
+                const source = this.audioCtx.createMediaStreamSource(this.localStream);
+                const analyser = this.audioCtx.createAnalyser();
+                analyser.fftSize = 256;
+                analyser.smoothingTimeConstant = 0.3;
+                source.connect(analyser); // Analyser only, NOT connected to audioCtx.destination (no self echo!)
 
-                this.localSource = this.audioCtx.createMediaStreamSource(this.localStream);
-                this.localAnalyser = this.audioCtx.createAnalyser();
-                this.localAnalyser.fftSize = 256;
-                this.localAnalyser.smoothingTimeConstant = 0.3;
-                this.localSource.connect(this.localAnalyser);
-
-                // Setup loopback gain for self-test (default 0 = muted)
-                if (!this.loopbackGain) {
-                    this.loopbackGain = this.audioCtx.createGain();
-                    this.loopbackGain.gain.value = this.loopbackEnabled ? 1.0 : 0;
-                    this.loopbackGain.connect(this.audioCtx.destination);
-                }
-                this.localAnalyser.connect(this.loopbackGain);
-
-                const dataArray = new Uint8Array(this.localAnalyser.frequencyBinCount);
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
                 let wasSpeaking = false;
                 let silenceTicks = 0;
 
@@ -383,15 +416,12 @@
                         return;
                     }
 
-                    this.localAnalyser.getByteFrequencyData(dataArray);
+                    analyser.getByteFrequencyData(dataArray);
                     let sum = 0;
-                    for (let i = 0; i < dataArray.length; i++) {
-                        sum += dataArray[i];
-                    }
+                    for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
                     const avg = sum / dataArray.length;
 
-                    // Speaking threshold (average frequency volume > 15)
-                    const isSpeakingNow = (avg > 15);
+                    const isSpeakingNow = (avg > 14);
 
                     if (isSpeakingNow) {
                         silenceTicks = 0;
@@ -406,7 +436,7 @@
                     } else {
                         if (wasSpeaking) {
                             silenceTicks++;
-                            if (silenceTicks >= 5) { // ~350ms of quiet before turning off
+                            if (silenceTicks >= 5) {
                                 wasSpeaking = false;
                                 const myIdx = (this.getMyPlayerIndex) ? this.getMyPlayerIndex() : 0;
                                 if (this.onSpeakingChange) this.onSpeakingChange(myIdx, false);
@@ -418,16 +448,16 @@
                     }
                 }, 70);
             } catch (err) {
-                console.warn('[Voice] Local VAD initialization warning:', err);
+                console.warn('[Voice] Local VAD error:', err);
             }
         }
 
-        // Remote Voice Activity Detection
+        // Remote Voice Activity Detection (lights up the other player's avatar when they talk)
         attachRemoteVAD(stream, playerIndex) {
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 if (!this.audioCtx) this.audioCtx = new AudioContext();
-                if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+                if (this.audioCtx.state === 'suspended') this.audioCtx.resume().catch(() => {});
 
                 const source = this.audioCtx.createMediaStreamSource(stream);
                 const analyser = this.audioCtx.createAnalyser();
@@ -451,7 +481,7 @@
                     for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
                     const avg = sum / dataArray.length;
 
-                    if (avg > 15) {
+                    if (avg > 14) {
                         silenceTicks = 0;
                         if (!wasSpeaking) {
                             wasSpeaking = true;
@@ -468,25 +498,11 @@
                     }
                 }, 80);
             } catch (e) {
-                console.warn('[Voice] Remote VAD setup error:', e);
+                console.warn('[Voice] Remote VAD error:', e);
             }
         }
 
-        // Toggle Self-Test / Loopback (allows player to hear themselves to test microphone)
-        toggleSelfTest() {
-            this.loopbackEnabled = !this.loopbackEnabled;
-            if (this.loopbackGain) {
-                this.loopbackGain.gain.value = this.loopbackEnabled ? 1.0 : 0;
-            }
-            if (this.loopbackEnabled) {
-                this.onToast('🎧 تم تفعيل فحص الصوت: يمكنك الآن سماع صوتك عبر السماعات!');
-            } else {
-                this.onToast('🎧 تم إيقاف فحص الصوت.');
-            }
-            return this.loopbackEnabled;
-        }
-
-        // Cleanup on leaving room
+        // Cleanup
         cleanup() {
             this.stopMic();
             this.peers.forEach((p, id) => this.removePeer(id));

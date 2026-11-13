@@ -665,11 +665,6 @@ input[type="text"]:focus {
     background: #10b981;
     box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
 }
-#btn-mic-test.active {
-    background: #2563eb;
-    box-shadow: 0 0 12px rgba(37, 99, 235, 0.7);
-    border-color: #60a5fa;
-}
 
 /* Game Main Area */
 .game-main-area {
