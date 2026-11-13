@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>لاما دودو الملكية | LAMA DUDO</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app" class="app-container">
+        <!-- Flying Gifts Animation Overlay -->
+        <div id="flying-gifts-layer" class="flying-gifts-layer"></div>
+
+        <!-- Ambient Lights -->
+        <div class="ambient-circle circle-1"></div>
+        <div class="ambient-circle circle-2"></div>
+        <div class="ambient-circle circle-3"></div>
+
+        <!-- ================= LOBBY SCREEN ================= -->
+        <div id="lobby-screen" class="screen active">
+            <header class="app-header">
+                <div class="logo-badge">👑 LAMA DUDO</div>
+                <h1>لاما دودو الملكية</h1>
+                <p class="subtitle">أنماط لودو الحماسية، نرد سحري، هدايا تفاعلية ومايكروفون حي</p>
+            </header>
+
+            <div class="card lobby-card">
+                <div class="input-group">
+                    <label for="player-name-input">اسمك في اللعبة</label>
+                    <input type="text" id="player-name-input" placeholder="أدخل اسمك..." maxlength="15" value="الملك 👑">
+                </div>
+
+                <!-- Mode Selector -->
+                <div class="mode-select-group">
+                    <label>اختر نمط اللودو المفضّل:</label>
+                    <div class="mode-chips">
+                        <button class="mode-chip active" data-mode="classic">
+                            <span class="mode-icon">🎲</span>
+                            <span class="mode-title">كلاسيكي</span>
+                            <span class="mode-desc">القواعد الأصلية</span>
+                        </button>
+                        <button class="mode-chip" data-mode="quick">
+                            <span class="mode-icon">⚡</span>
+                            <span class="mode-title">سريع (Quick)</span>
+                            <span class="mode-desc">فوز بقطعتين</span>
+                        </button>
+                        <button class="mode-chip" data-mode="magic">
+                            <span class="mode-icon">🪄</span>
+                            <span class="mode-title">سحري (Magic)</span>
+                            <span class="mode-desc">أدوات وصواريخ</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="lobby-actions">
+                    <button id="btn-create-room" class="btn btn-primary btn-lg">
+                        <span class="btn-icon">👑</span>
+                        <span>إنشاء غرفة جديدة</span>
+                    </button>
+
+                    <div class="divider"><span>أو انضم لأصدقائك</span></div>
+
+                    <div class="join-room-box">
+                        <input type="text" id="room-code-input" placeholder="رمز الغرفة (مثال: 9B4X)" maxlength="6">
+                        <button id="btn-join-room" class="btn btn-secondary">
+                            <span>انضمام</span>
+                        </button>
+                    </div>
+
+                    <div class="divider"><span>أو العب فوراً</span></div>
+
+                    <button id="btn-play-offline" class="btn btn-accent btn-lg">
+                        <span class="btn-icon">🤖</span>
+                        <span>لعب سريع ضد روبوتات ذكية</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="lobby-features">
+                <div class="feat-item">🎙️ دردشة صوتية ومايك حي</div>
+                <div class="feat-item">💣 رمي قنابل وطماطم وهدايا</div>
+                <div class="feat-item">🪄 نرد سحري ودروع وصواريخ</div>
+            </div>
+        </div>
+
+        <!-- ================= ROOM WAITING SCREEN ================= -->
+        <div id="room-screen" class="screen">
+            <header class="room-header">
+                <button id="btn-leave-room" class="btn btn-sm btn-outline">
+                    <span>خروج ✕</span>
+                </button>
+                <div class="room-code-display">
+                    <span class="code-label">رمز الغرفة:</span>
+                    <span id="display-room-code" class="code-value">----</span>
+                    <button id="btn-copy-code" class="btn-copy" title="نسخ الرمز">📋</button>
+                </div>
+                <div class="room-mode-tag" id="room-current-mode-badge">🎲 كلاسيكي</div>
+            </header>
+
+            <div class="waiting-body">
+                <h2>في انتظار انضمام اللاعبين...</h2>
+                <p class="waiting-hint">اضغط على أي لاعب لرمي هدايا أو أضف روبوتات للبدء فوراً</p>
+
+                <div class="players-slots-grid">
+                    <!-- Red Slot -->
+                    <div class="player-slot slot-red vip-frame" data-slot="0">
+                        <div class="avatar-wrapper">
+                            <div class="slot-avatar">🔴</div>
+                            <div class="voice-wave"></div>
+                        </div>
+                        <div class="slot-info">
+                            <span class="slot-color">الأحمر (المضيف)</span>
+                            <span class="slot-name" id="name-slot-0">في الانتظار...</span>
+                        </div>
+                    </div>
+
+                    <!-- Green Slot -->
+                    <div class="player-slot slot-green vip-frame" data-slot="1">
+                        <div class="avatar-wrapper">
+                            <div class="slot-avatar">🟢</div>
+                            <div class="voice-wave"></div>
+                        </div>
+                        <div class="slot-info">
+                            <span class="slot-color">الأخضر</span>
+                            <span class="slot-name" id="name-slot-1">فارغ</span>
+                        </div>
+                        <button class="btn-add-bot" data-slot="1">+ بوت</button>
+                    </div>
+
+                    <!-- Yellow Slot -->
+                    <div class="player-slot slot-yellow vip-frame" data-slot="2">
+                        <div class="avatar-wrapper">
+                            <div class="slot-avatar">🟡</div>
+                            <div class="voice-wave"></div>
+                        </div>
+                        <div class="slot-info">
+                            <span class="slot-color">الأصفر</span>
+                            <span class="slot-name" id="name-slot-2">فارغ</span>
+                        </div>
+                        <button class="btn-add-bot" data-slot="2">+ بوت</button>
+                    </div>
+
+                    <!-- Blue Slot -->
+                    <div class="player-slot slot-blue vip-frame" data-slot="3">
+                        <div class="avatar-wrapper">
+                            <div class="slot-avatar">🔵</div>
+                            <div class="voice-wave"></div>
+                        </div>
+                        <div class="slot-info">
+                            <span class="slot-color">الأزرق</span>
+                            <span class="slot-name" id="name-slot-3">فارغ</span>
+                        </div>
+                        <button class="btn-add-bot" data-slot="3">+ بوت</button>
+                    </div>
+                </div>
+
+                <div class="room-footer-actions">
+                    <button id="btn-start-game" class="btn btn-primary btn-xl" disabled>
+                        <span>بدء اللعبة الآن 🚀</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MAIN GAME SCREEN ================= -->
+        <div id="game-screen" class="screen">
+            <!-- Top Bar: Player Profile Cards with Gifts trigger & Voice waves -->
+            <div class="game-top-bar">
+                <div class="player-cards-row">
+                    <div class="player-card card-red vip-border" id="card-p-0" data-player="0" title="اضغط لرمي هدية!">
+                        <div class="avatar-box">
+                            <div class="p-dot">🔴</div>
+                            <div class="voice-wave-ring"></div>
+                        </div>
+                        <div class="p-details">
+                            <span class="p-name">الأحمر</span>
+                            <div class="p-home-count" id="home-count-0">0/4</div>
+                        </div>
+                    </div>
+                    <div class="player-card card-green vip-border" id="card-p-1" data-player="1" title="اضغط لرمي هدية!">
+                        <div class="avatar-box">
+                            <div class="p-dot">🟢</div>
+                            <div class="voice-wave-ring"></div>
+                        </div>
+                        <div class="p-details">
+                            <span class="p-name">الأخضر</span>
+                            <div class="p-home-count" id="home-count-1">0/4</div>
+                        </div>
+                    </div>
+                    <div class="player-card card-yellow vip-border" id="card-p-2" data-player="2" title="اضغط لرمي هدية!">
+                        <div class="avatar-box">
+                            <div class="p-dot">🟡</div>
+                            <div class="voice-wave-ring"></div>
+                        </div>
+                        <div class="p-details">
+                            <span class="p-name">الأصفر</span>
+                            <div class="p-home-count" id="home-count-2">0/4</div>
+                        </div>
+                    </div>
+                    <div class="player-card card-blue vip-border" id="card-p-3" data-player="3" title="اضغط لرمي هدية!">
+                        <div class="avatar-box">
+                            <div class="p-dot">🔵</div>
+                            <div class="voice-wave-ring"></div>
+                        </div>
+                        <div class="p-details">
+                            <span class="p-name">الأزرق</span>
+                            <div class="p-home-count" id="home-count-3">0/4</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-quick-tools">
+                    <button id="btn-dice-skin" class="btn-tool" title="تغيير شكل النرد 🎨">🎨</button>
+                    <button id="btn-mic-toggle" class="btn-tool btn-mic" title="تفعيل / كتم المايكروفون">🎙️</button>
+                    <button id="btn-sound-toggle" class="btn-tool" title="كتم / تشغيل الصوت">🔊</button>
+                    <button id="btn-rules-toggle" class="btn-tool" title="القواعد">📖</button>
+                    <button id="btn-chat-toggle" class="btn-tool" title="الدردشة">💬</button>
+                    <button id="btn-quit-game" class="btn-tool" title="مغادرة">🚪</button>
+                </div>
+            </div>
+
+            <!-- Game Center: Board & Control Panel -->
+            <div class="game-main-area">
+                <!-- Ludo Board Wrapper -->
+                <div class="board-wrapper">
+                    <div id="board-container" class="board-container">
+                        <!-- SVG Board injected here -->
+                    </div>
+                </div>
+
+                <!-- Dice & Turn Control Panel -->
+                <div class="control-panel">
+                    <!-- 6 Special Animation Overlay -->
+                    <div id="dice-special-popup" class="dice-special-popup">
+                        <div class="popup-avatar" id="popup-avatar">🐱</div>
+                        <div class="popup-title" id="popup-title">مياااو! 🐾</div>
+                    </div>
+
+                    <div class="turn-status-banner" id="turn-banner">
+                        <span class="turn-text" id="turn-text">دور اللاعب الأحمر</span>
+                    </div>
+
+                    <!-- 3D Gold Dice Stage -->
+                    <div class="dice-stage">
+                        <div class="dice-cube gold-dice" id="dice-cube">
+                            <div class="dice-face face-1"><span class="pip pip-center"></span></div>
+                            <div class="dice-face face-2"><span class="pip pip-tl"></span><span class="pip pip-br"></span></div>
+                            <div class="dice-face face-3"><span class="pip pip-tl"></span><span class="pip pip-center"></span><span class="pip pip-br"></span></div>
+                            <div class="dice-face face-4"><span class="pip pip-tl"></span><span class="pip pip-tr"></span><span class="pip pip-bl"></span><span class="pip pip-br"></span></div>
+                            <div class="dice-face face-5"><span class="pip pip-tl"></span><span class="pip pip-tr"></span><span class="pip pip-center"></span><span class="pip pip-bl"></span><span class="pip pip-br"></span></div>
+                            <div class="dice-face face-6">
+                                <span class="pip pip-tl"></span><span class="pip pip-ml"></span><span class="pip pip-bl"></span>
+                                <span class="pip pip-tr"></span><span class="pip pip-mr"></span><span class="pip pip-br"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="btn-roll-dice" class="btn btn-roll btn-lg">
+                        <span>ارمِ النرد 🎲</span>
+                    </button>
+
+                    <!-- Magic Powers Bar (Only active in Magic mode!) -->
+                    <div id="magic-powers-dock" class="magic-powers-dock">
+                        <div class="dock-title">🪄 بطاقات القوة السحرية</div>
+                        <div class="dock-powers-row">
+                            <button id="power-magic-dice" class="power-btn" title="اختر رقم النرد يدوياً">
+                                <span class="p-icon">🎲</span>
+                                <span class="p-lbl">نرد سحري</span>
+                                <span class="p-badge" id="count-magic-dice">2</span>
+                            </button>
+                            <button id="power-shield" class="power-btn" title="حماية قطعتك من الأكل">
+                                <span class="p-icon">🛡️</span>
+                                <span class="p-lbl">درع حماية</span>
+                                <span class="p-badge" id="count-shield">2</span>
+                            </button>
+                            <button id="power-rocket" class="power-btn" title="تفجير قطعة خصم وإرجاعها للبيت">
+                                <span class="p-icon">🚀</span>
+                                <span class="p-lbl">صاروخ</span>
+                                <span class="p-badge" id="count-rocket">1</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="move-instruction" class="move-instruction">اضغط على القطعة التي تريد تحريكها</div>
+                </div>
+            </div>
+
+            <!-- In-Game Chat Floating Drawer -->
+            <div id="chat-drawer" class="chat-drawer">
+                <div class="chat-header">
+                    <span>دردشة لاما دودو 💬</span>
+                    <button id="btn-close-chat" class="btn-close">✕</button>
+                </div>
+                <div id="chat-messages" class="chat-messages">
+                    <div class="chat-msg system">مرحباً بكم في لاما دودو! يمكنك الضغط على أي لاعب لرمي الهدايا أو استخدام المايكروفون.</div>
+                </div>
+                <div class="chat-emojis">
+                    <span class="chat-emoji-btn">🎲</span>
+                    <span class="chat-emoji-btn">🔥</span>
+                    <span class="chat-emoji-btn">👏</span>
+                    <span class="chat-emoji-btn">😂</span>
+                    <span class="chat-emoji-btn">🏆</span>
+                    <span class="chat-emoji-btn">💥</span>
+                </div>
+                <div class="chat-input-bar">
+                    <input type="text" id="chat-input" placeholder="اكتب رسالة..." maxlength="100">
+                    <button id="btn-send-chat">إرسال</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= LAMA GIFTS MODAL (صندوق الهدايا والمشاكسات) ================= -->
+        <div id="gift-modal" class="modal-overlay">
+            <div class="modal-box gift-box-modal">
+                <div class="gift-modal-header">
+                    <h3>🎁 رمي هدية أو مقلب إلى: <span id="gift-target-player-name" class="highlight-target">اللاعب</span></h3>
+                    <button id="btn-close-gifts" class="btn-close">✕</button>
+                </div>
+                <div class="gifts-grid">
+                    <div class="gift-item" data-gift="rose">
+                        <span class="gift-icon">🌹</span>
+                        <span class="gift-name">وردة حب</span>
+                    </div>
+                    <div class="gift-item" data-gift="bomb">
+                        <span class="gift-icon">💣</span>
+                        <span class="gift-name">قنبلة</span>
+                    </div>
+                    <div class="gift-item" data-gift="tomato">
+                        <span class="gift-icon">🍅</span>
+                        <span class="gift-name">طماطم</span>
+                    </div>
+                    <div class="gift-item" data-gift="egg">
+                        <span class="gift-icon">🥚</span>
+                        <span class="gift-name">بيضة</span>
+                    </div>
+                    <div class="gift-item" data-gift="ring">
+                        <span class="gift-icon">💍</span>
+                        <span class="gift-name">خاتم ماسي</span>
+                    </div>
+                    <div class="gift-item" data-gift="rocket">
+                        <span class="gift-icon">🚀</span>
+                        <span class="gift-name">صاروخ مرح</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MAGIC DICE SELECTOR MODAL ================= -->
+        <div id="magic-dice-modal" class="modal-overlay">
+            <div class="modal-box magic-dice-box">
+                <h3>🪄 اختر الرقم المطلوب في النرد السحري:</h3>
+                <div class="dice-numbers-row">
+                    <button class="btn-num-select" data-num="1">1</button>
+                    <button class="btn-num-select" data-num="2">2</button>
+                    <button class="btn-num-select" data-num="3">3</button>
+                    <button class="btn-num-select" data-num="4">4</button>
+                    <button class="btn-num-select" data-num="5">5</button>
+                    <button class="btn-num-select" data-num="6">6 ⭐</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VICTORY MODAL ================= -->
+        <div id="victory-modal" class="modal-overlay">
+            <div class="modal-box victory-box">
+                <div class="victory-trophy">👑</div>
+                <h2 id="victory-title">تتويج بطل لاما دودو!</h2>
+                <div id="victory-podium" class="victory-podium"></div>
+                <div class="modal-actions">
+                    <button id="btn-play-again" class="btn btn-primary btn-lg">العودة للرئيسية</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= DICE SKINS MODAL ================= -->
+        <div id="dice-skins-modal" class="modal-overlay">
+            <div class="modal-box dice-skins-box">
+                <div class="rules-header">
+                    <h2>🎨 اختر شكل وتصميم النرد</h2>
+                    <button id="btn-close-dice-skins" class="btn-close">✕</button>
+                </div>
+                <p class="skins-subtitle">عند الحصول على الرقم 6، تظهر الشخصية مع صوت وحركة مميزة!</p>
+                <div class="skins-grid">
+                    <!-- Skin 1: Cat -->
+                    <div class="skin-card active" data-skin="cat">
+                        <div class="skin-preview skin-preview-cat">🐱</div>
+                        <div class="skin-info">
+                            <span class="skin-name">نرد القطة اللطيفة 🐱</span>
+                            <span class="skin-desc">صوت مواء قطة لطيف + ظهور القطة عند 6!</span>
+                        </div>
+                    </div>
+                    <!-- Skin 2: Lion -->
+                    <div class="skin-card" data-skin="lion">
+                        <div class="skin-preview skin-preview-lion">🦁</div>
+                        <div class="skin-info">
+                            <span class="skin-name">نرد الأسد الملكي 🦁</span>
+                            <span class="skin-desc">صوت زئير أسد حقيقي + نيران عند 6!</span>
+                        </div>
+                    </div>
+                    <!-- Skin 3: Dragon -->
+                    <div class="skin-card" data-skin="dragon">
+                        <div class="skin-preview skin-preview-dragon">🐉</div>
+                        <div class="skin-info">
+                            <span class="skin-name">نرد التنين الأسطوري 🐉</span>
+                            <span class="skin-desc">صوت صرخة تنين كهربائية + برق عند 6!</span>
+                        </div>
+                    </div>
+                    <!-- Skin 4: Royal Gold -->
+                    <div class="skin-card" data-skin="gold">
+                        <div class="skin-preview skin-preview-gold">👑</div>
+                        <div class="skin-info">
+                            <span class="skin-name">نرد العرش الإمبراطوري 👑</span>
+                            <span class="skin-desc">موسيقى تتويج ملكي + ذهب لامع عند 6!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= RULES MODAL ================= -->
+        <div id="rules-modal" class="modal-overlay">
+            <div class="modal-box rules-box">
+                <div class="rules-header">
+                    <h2>📖 أنماط وقواعد لاما دودو</h2>
+                    <button id="btn-close-rules" class="btn-close">✕</button>
+                </div>
+                <div class="rules-content">
+                    <ul>
+                        <li><strong>🎲 النمط الكلاسيكي (Classic):</strong> خروج القطعة برقم 6، والفوز بدخول القطع الـ 4 إلى المركز.</li>
+                        <li><strong>⚡ النمط السريع (Quick):</strong> الفوز بإدخال <strong>قطعتين فقط</strong> إلى المركز، وتبدأ بقطعة جاهزة في المسار، ويشترط أكل قطعة خصم واحدة لفتح مسار النهاية!</li>
+                        <li><strong>🪄 النمط السحري (Magic):</strong> استخدام بطاقات القوة:
+                            <br>• <strong>النرد السحري:</strong> اختيار أي رقم تريده يدوياً.
+                            <br>• <strong>درع الحماية:</strong> يمنع الخصم من أكل قطعتك.
+                            <br>• <strong>الصاروخ:</strong> تفجير أي قطعة خصم وإرجاعها للبيت!
+                        </li>
+                        <li><strong>🎁 الهدايا التفاعلية:</strong> اضغط على أي بطاقة لاعب لرمي ورود، قنابل، طماطم، وبيج تفاعلي!</li>
+                        <li><strong>🎙️ الدردشة الصوتية:</strong> زر المايكروفون في الأعلى لتفعيل الصوت وإشارة التحدث.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div id="toast" class="toast"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/board.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
